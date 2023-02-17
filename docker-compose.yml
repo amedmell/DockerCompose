@@ -1,0 +1,49 @@
+version: '3.8'
+services:
+  frontend:
+    container_name: frontend
+    build:
+      context: ./crudclient/
+    ports:
+      - "80:80"
+    # depends_on:
+    #   backend:
+    #     condition: service_healthy
+
+  backend:
+    container_name: backend
+    build:
+      context: ./YannickUserCrud/
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_HOST=database
+      - DB_PORT=1521
+      - DB_SID=EE.oracle.docker
+      - DB_USERNAME=system
+      - DB_PASSWORD=oracle
+    depends_on:
+     database:
+        condition: service_healthy
+
+  database:
+    container_name: database  
+    build:
+      context: ./OracleDatabase
+    ports:
+      - 1521:1521
+    volumes:
+      - ./database:/u01/app/oracle
+    healthcheck:
+      test: [ "CMD", "./DB_Healthcheck.sh"]
+      interval: 60s
+      timeout: 5s
+      retries: 6
+
+volumes:
+  oracle-database:
+    driver: local
+
+
+
+    
