@@ -1,49 +1,67 @@
 version: '3.8'
 services:
-  frontend:
+  #Service du frontend crée avec un projet React
+  frontend: 
     container_name: frontend
     build:
-      context: ./crudclient/
+      context: ./crudclient/ #chemin du projet React contenu dans le Dockerfile
     ports:
-      - "80:80"
-    # depends_on:
-    #   backend:
-    #     condition: service_healthy
+      - "80:80" #port du container
+    depends_on:
+      backend: #Ce service dépend du service backend
+        condition: service_healthy
+    networks:
+      - project-network #réseau du projet
 
+
+  #Service du backend crée avec un projet Spring Boot
   backend:
     container_name: backend
     build:
-      context: ./YannickUserCrud/
+      context: ./YannickUserCrud/ #chemin du projet Spring Boot contenu dans le Dockerfile
     ports:
-      - "8080:8080"
+      - "8080:8080" #port du container
+
+    #Les variables d'environnement qui seront utilisées par le projet Spring Boot
     environment:
       - DB_HOST=database
       - DB_PORT=1521
       - DB_SID=EE.oracle.docker
       - DB_USERNAME=system
       - DB_PASSWORD=oracle
-    depends_on:
+    depends_on: #Ce service dépend du service de base de données
      database:
         condition: service_healthy
 
+    healthcheck: #Healthcheck du service backend
+      test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    networks:
+      - project-network
+
+
+  #Service de base de données
   database:
     container_name: database  
     build:
       context: ./OracleDatabase
     ports:
       - 1521:1521
-    volumes:
+    volumes: #Les données de la base de données seront stockées dans un volume
       - ./database:/u01/app/oracle
-    healthcheck:
+    
+    healthcheck: #Healthcheck du service de base de données
       test: [ "CMD", "./DB_Healthcheck.sh"]
       interval: 60s
       timeout: 5s
       retries: 6
+    networks:
+      - project-network
 
-volumes:
+
+volumes: #Volume pour la base de données
   oracle-database:
     driver: local
-
-
-
-    
