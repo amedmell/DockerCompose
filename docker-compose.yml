@@ -62,6 +62,9 @@ services:
       - project-network
 
 
+networks:
+  project-network: #Réseau du projet
+
 volumes: #Volume pour la base de données
   oracle-database:
     driver: local
